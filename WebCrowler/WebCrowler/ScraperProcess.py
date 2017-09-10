@@ -6,13 +6,27 @@ Created on Sep 9, 2017
 import sys
 import requests
 import multiprocessing
+import DBClasses
+from sqlalchemy.sql import table, column, select, update, insert
 from bs4 import BeautifulSoup 
+from sqlalchemy import create_engine, inspect, MetaData, Table
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.sql import table, column, select, update, insert
 
 class ScraperProcess(multiprocessing.Process):
     '''
     classdocs
     '''
-
+    @staticmethod
+    def extractLinkParts(linkQuery):
+        linkParts=linkQuery.split('?')
+        if(len(linkParts)>1):
+            return (linkParts[0],[{'name':par.split('=')[0],'value':par.split('=')[1]} for par in linkParts[1].split('&')])
+        return (linkQuery,[])
+    
     def shutdown(self):
         print("Shutdown initiated")
         self.exit.set()
@@ -22,42 +36,56 @@ class ScraperProcess(multiprocessing.Process):
         '''
         Constructor
         '''
+        
+        # self.dbsession=session
+        # self.engine=engine
         multiprocessing.Process.__init__(self)
         self.exit = multiprocessing.Event()
         self.condition = condition
-        self.restricter=restricter
-        self.queue=queue
-        self.baseLink=baseLink
-        self.procesed_set=procesed_set
+        self.restricter = restricter
+        self.queue = queue
+        self.baseLink = baseLink
+        self.procesed_set = procesed_set
     
     def run(self):  
+        engine = create_engine('sqlite:///WBDatabase.db')   
+        # Session = sessionmaker(bind=engine)
+        # session=Session()
+        metadata = MetaData(bind=engine)
+        
         while not self.exit.is_set():
-            #print(seeds[index])
-            seed=self.queue.get()
-            print("seed:"+seed)
+            # print(seeds[index])
+            seed = self.queue.get()
+            
+            # self.engine.execute(DBClasses.getTable('link').insert(), value=seed)
+            print("seed:" + seed)
             try:
-                html=requests.get(seed)
+                html = requests.get(seed)
             except Exception as e:
                 print('~~~~~~Error~~~~~~')
                 print(e)
                 print('~~~~~~Error~~~~~~')
                 continue
-            pritty_html=BeautifulSoup(html.text.encode(sys.stdout.encoding, errors='replace'),'html.parser')
+            pritty_html = BeautifulSoup(html.text.encode(sys.stdout.encoding, errors='replace'), 'html.parser')
             for link in pritty_html.find_all('a'):
                 try:
-                    href=link.get('href')
+                    href = link.get('href')
                     if(any(link_part in href for link_part in self.restricter)):
                         if(self.baseLink not in href):
-                                href=self.baseLink+href
+                                href = self.baseLink + href
                         if(href not in self.procesed_set):
                             print(href) 
+                            linkTable = Table('link', metadata, autoload=True)
+                            insertedLink = engine.execute(linkTable.insert().values(value=seed))
+                            htmlTable=Table('html', metadata, autoload=True)
+                            insertedHtml = engine.execute(htmlTable.insert().values(value=html.text.encode(sys.stdout.encoding, errors='replace')))
                             self.queue.put(href)  
                             self.procesed_set.append(href)
                 except Exception:
                     print('-1-1-1-1-1-1-1')
-                    #print(pritty_html.find_all('a'))
+                    # print(pritty_html.find_all('a'))
                     print(Exception.args[0])
-            print('------'+str(len(self.procesed_set))+" "+str(self.queue.qsize())
+            print('------' + str(len(self.procesed_set)) + " " + str(self.queue.qsize())
 )      
             
         print(seed)   

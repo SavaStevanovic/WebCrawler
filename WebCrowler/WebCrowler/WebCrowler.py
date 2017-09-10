@@ -3,10 +3,11 @@ Created on Sep 9, 2017
 
 @author: Sava
 '''
+from sqlalchemy import create_engine,inspect
+import DBClasses
 import multiprocessing
 from ScraperProcess import ScraperProcess
-import time
-import Singleton
+
 
 class WebCrowler():
     '''
@@ -35,11 +36,14 @@ class WebCrowler():
             return linkParts[0]+'://'
         return 'http://'
 
-
     def __init__(self, seedLink, restrictor=None):
         '''
         Constructor
         '''
+        
+        #self.dbsession=DBClasses.sessionGetter()
+        DBClasses.sessionGetter('link')
+        DBClasses.sessionGetter('html')
         self.restricter=restrictor
         if(not restrictor):
             self.restricter=self.restrictorExtracter(seedLink)
