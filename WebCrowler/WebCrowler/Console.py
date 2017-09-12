@@ -4,6 +4,7 @@ Created on Sep 9, 2017
 @author: Sava
 '''
 #Start http://www.pmf.ni.ac.rs/pmf/index.php pmf
+#Start https://www.wikipedia.org/ wikipe
 
 started=True;
 from WebCrowler import WebCrowler

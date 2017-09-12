@@ -4,7 +4,7 @@ Created on Sep 10, 2017
 @author: Sava
 '''
 
-from sqlalchemy import create_engine, inspect, MetaData, Table
+from sqlalchemy import create_engine, inspect, MetaData, Table, ForeignKeyConstraint
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.ext.declarative import declarative_base
@@ -16,30 +16,8 @@ from sqlalchemy.dialects.sqlite import \
             VARCHAR
 Base = declarative_base()
 engine = create_engine('sqlite:///WBDatabase.db')   
-Session = sessionmaker(bind=engine)
-session = Session()
 metadata = MetaData(bind=engine)
-
-class Link(Base):
-    '''
-    classdocs
-    '''
-    __tablename__ = 'link'
-        
-    id = Column(Integer, primary_key=True)
-    value = Column(String)
-    
-class Parameter(Base):
-    '''
-    classdocs
-    '''
-    __tablename__ = 'parameter'
-        
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    value = Column(String)
-    link_id = Column(Integer, ForeignKey('link.id'))
-    html_id = Column(Integer, ForeignKey('html.id'))
+Base.metadata.create_all(engine)
     
 class Html(Base):
     '''
@@ -48,15 +26,40 @@ class Html(Base):
     __tablename__ = 'html'
         
     id = Column(Integer, primary_key=True)
-    value = Column(String)
+    linkValue = Column(TEXT)
+    textValue = Column(TEXT)
+    
+class Connection(Base):
+    '''
+    classdocs
+    '''
+    __tablename__ = 'conn'
+        
+    htmlSource = Column(Integer, ForeignKey('html.id'), primary_key=True)
+    htmlProduct = Column(Integer, ForeignKey('html.id'), primary_key=True)
+    __table_args__ = (ForeignKeyConstraint([htmlSource, htmlProduct],
+                                           [Html.id, Html.id]),
+                      {})
 
-def getEngine():
-    return engine
 
-def sessionGetter(tableName):
+def initiateDatabase():
+    Base.metadata.create_all(engine)
+        
+def initiateLinkSearch(link):
+    table = Table('html', metadata, autoload=True)
+    s=engine.execute(table.select().where(table.columns.linkValue==link))
+    links=s.fetchall()
+    if(len(links)==0):
+        insertedHtml = engine.execute(table.insert().values(linkValue=link)).inserted_primary_key[0]
+    else:
+        insertedHtml=links[0].id
+    return insertedHtml,link
+
+def databaseOutput():
+    tables=engine.table_names()
+    for tableName in tables:
         table = Table(tableName, metadata, autoload=True)
-        s = table.select()
-        result = session.execute(s)
-        out = result.fetchall()
+        s=engine.execute(table.select())
+        out = s.fetchall()
         print(out)
     

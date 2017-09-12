@@ -42,13 +42,14 @@ class WebCrowler():
         '''
         
         #self.dbsession=DBClasses.sessionGetter()
-        DBClasses.sessionGetter('link')
-        DBClasses.sessionGetter('html')
+        DBClasses.initiateDatabase()
+        DBClasses.databaseOutput()
+        id,link=DBClasses.initiateLinkSearch(seedLink)
         self.restricter=restrictor
         if(not restrictor):
             self.restricter=self.restrictorExtracter(seedLink)
         self.queue=multiprocessing.Queue()
-        self.queue.put(seedLink)
+        self.queue.put((id,link))
         self.manager=multiprocessing.Manager()
         self.procesed_set=self.manager.list()
         self.condition = multiprocessing.Condition();

@@ -55,12 +55,16 @@ class ScraperProcess(multiprocessing.Process):
         
         while not self.exit.is_set():
             # print(seeds[index])
-            seed = self.queue.get()
+            idHtml,seed = self.queue.get()
             
             # self.engine.execute(DBClasses.getTable('link').insert(), value=seed)
             print("seed:" + seed)
             try:
                 html = requests.get(seed)
+                htmlTable=Table('html', metadata, autoload=True)
+                updateStm=htmlTable.update().values(textValue=html.text.encode(sys.stdout.encoding, errors='replace')).where(htmlTable.columns.id==idHtml)
+                engine.execute(updateStm)
+                #insertedHtml = engine.execute(htmlTable.update().where(id=idHtml).values(textValue=html.text.encode(sys.stdout.encoding, errors='replace')))
             except Exception as e:
                 print('~~~~~~Error~~~~~~')
                 print(e)
@@ -70,21 +74,24 @@ class ScraperProcess(multiprocessing.Process):
             for link in pritty_html.find_all('a'):
                 try:
                     href = link.get('href')
-                    if(any(link_part in href for link_part in self.restricter)):
+                    if(href!=None and any(link_part in href for link_part in self.restricter)):
                         if(self.baseLink not in href):
-                                href = self.baseLink + href
+                                href = (self.baseLink + href).replace('///','//').replace('///','//')
                         if(href not in self.procesed_set):
                             print(href) 
-                            linkTable = Table('link', metadata, autoload=True)
-                            insertedLink = engine.execute(linkTable.insert().values(value=seed))
                             htmlTable=Table('html', metadata, autoload=True)
-                            insertedHtml = engine.execute(htmlTable.insert().values(value=html.text.encode(sys.stdout.encoding, errors='replace')))
-                            self.queue.put(href)  
+                            insertedHtml = engine.execute(htmlTable.insert().values(linkValue=href))
+                            
+                            connTable = Table('conn', metadata, autoload=True)
+                            insertedConn = engine.execute(connTable.insert().values(htmlSource=idHtml,htmlProduct=insertedHtml.inserted_primary_key[0]))
+                            self.queue.put((insertedHtml.inserted_primary_key[0],href))  
                             self.procesed_set.append(href)
                 except Exception:
                     print('-1-1-1-1-1-1-1')
-                    # print(pritty_html.find_all('a'))
-                    print(Exception.args[0])
+                    try:
+                        print(Exception.args[0])
+                    except: 
+                        print(Exception)
             print('------' + str(len(self.procesed_set)) + " " + str(self.queue.qsize())
 )      
             
