@@ -83,9 +83,10 @@ class ScraperProcess(multiprocessing.Process):
                             insertedHtml = engine.execute(htmlTable.insert().values(linkValue=href))
                             
                             connTable = Table('conn', metadata, autoload=True)
-                            insertedConn = engine.execute(connTable.insert().values(htmlSource=idHtml,htmlProduct=insertedHtml.inserted_primary_key[0]))
+                            engine.execute(connTable.insert().values(htmlSource=idHtml,htmlProduct=insertedHtml.inserted_primary_key[0]))
                             self.queue.put((insertedHtml.inserted_primary_key[0],href))  
                             self.procesed_set.append(href)
+                       
                 except Exception:
                     print('-1-1-1-1-1-1-1')
                     try:

@@ -55,11 +55,23 @@ def initiateLinkSearch(link):
         insertedHtml=links[0].id
     return insertedHtml,link
 
-def databaseOutput():
+def getProcessQueue():
+    table = Table('html', metadata, autoload=True)
+    s=engine.execute(table.select().where(table.columns.textValue==None))
+    links=s.fetchall()
+    return [(entry.id,entry.linkValue) for entry in links]
+
+def getEnteredSet():
+    table = Table('html', metadata, autoload=True)
+    s=engine.execute(table.select())
+    links=s.fetchall()
+    return [entry.linkValue for entry in links]
+
+def databaseOutput(count=10):
     tables=engine.table_names()
     for tableName in tables:
         table = Table(tableName, metadata, autoload=True)
-        s=engine.execute(table.select())
+        s=engine.execute(table.select().limit(count))
         out = s.fetchall()
         print(out)
     

@@ -45,15 +45,17 @@ class WebCrowler():
         DBClasses.initiateDatabase()
         DBClasses.databaseOutput()
         id,link=DBClasses.initiateLinkSearch(seedLink)
-        self.restricter=restrictor
+        self.restrictor=restrictor
         if(not restrictor):
-            self.restricter=self.restrictorExtracter(seedLink)
+            self.restrictor=self.restrictorExtracter(seedLink)
         self.queue=multiprocessing.Queue()
-        self.queue.put((id,link))
+        toProcess=DBClasses.getProcessQueue()
+        [self.queue.put(item) for item in toProcess]
         self.manager=multiprocessing.Manager()
         self.procesed_set=self.manager.list()
+        [self.procesed_set.append(item) for item in DBClasses.getEnteredSet()]
         self.condition = multiprocessing.Condition();
         self.cpu_count=multiprocessing.cpu_count();
         self.base=self.baseLinkExtractor(seedLink)
         # base, condition, queue, restricter, procesed_set
-        self.processes=[ScraperProcess(self.base,self.condition,self.queue,self.restricter,self.procesed_set) for x in range(self.cpu_count)]
+        self.processes=[ScraperProcess(self.base,self.condition,self.queue,self.restrictor,self.procesed_set) for x in range(self.cpu_count)]
