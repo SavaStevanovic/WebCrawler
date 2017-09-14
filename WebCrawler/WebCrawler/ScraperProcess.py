@@ -29,12 +29,6 @@ class ScraperProcess(multiprocessing.Process):
 
 
     def __init__(self, baseLink, queue, restricter, procesed_set):
-        '''
-        Constructor
-        '''
-        
-        # self.dbsession=session
-        # self.engine=engine
         multiprocessing.Process.__init__(self)
         self.exit = multiprocessing.Event()
         self.restricter = restricter
