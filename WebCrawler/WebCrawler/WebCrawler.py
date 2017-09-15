@@ -53,6 +53,6 @@ class WebCrawler():
         manager = multiprocessing.Manager()
         procesed_set = manager.list()
         [procesed_set.append(item) for item in DBClasses.getEnteredHtmlSet()]
-        self.cpu_count = multiprocessing.cpu_count();
+        cpu_count = multiprocessing.cpu_count();
         base = baseLinkExtractor(seedLink)
-        self.processes = [ScraperProcess(base, queue, restrictor, procesed_set) for _ in range(self.cpu_count)]
+        self.processes = [ScraperProcess(base, queue, restrictor, procesed_set) for _ in range(cpu_count)]

@@ -36,6 +36,12 @@ class ScraperProcess(multiprocessing.Process):
         self.baseLink = baseLink
         self.procesed_set = procesed_set
     
+
+    def linkBackslashReducer(self, href):
+        if (self.baseLink not in href):
+            href = (self.baseLink + href).replace('///', '//').replace('///', '//')
+        return href
+
     def run(self):  
         engine = create_engine(DBClasses.databaseLocation)   
         metadata = MetaData(bind=engine)
@@ -56,8 +62,7 @@ class ScraperProcess(multiprocessing.Process):
                 try:
                     href = link.get('href')
                     if(href != None and any(link_part in href for link_part in self.restricter)):
-                        if(self.baseLink not in href):
-                                href = (self.baseLink + href).replace('///', '//').replace('///', '//')
+                        href = self.linkBackslashReducer(href)
                         if(href not in self.procesed_set):
                             print(href) 
                             htmlTable = Table(DBClasses.tableHtml, metadata, autoload=True)

@@ -11,7 +11,7 @@ Created on Sep 9, 2017
 from WebCrawler import WebCrawler
 
 def executeCommand(webCrawler, command):
-    commandParts = [part.strip(' ') for part in command.split(' ')]
+    commandParts = [part for part in command.split(' ')]
     if (commandParts[0] == 'Start'):
         if (webCrawler != None):
             webCrawler.processesShutDown()
